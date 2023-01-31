@@ -104,7 +104,7 @@ contract Rsa {
      *      https://github.com/ethereum/EIPs/blob/master/EIPS/eip-198.md
      */
 
-   function verifySignature(bytes calldata sig) external view returns (bool) {
+    function verifySignature(bytes calldata sig) external view returns (bool) {
         require(sig.length == modLength);
 
         // Load immutable variable onto the stack.
@@ -119,8 +119,8 @@ contract Rsa {
              * @dev Store in memory, length of BASE(signature), EXPONENT, MODULUS.
              */
             mstore(0x80, sig.length)
-            mstore(add(0x80, 0x20), 0x20)
-            mstore(add(0x80, 0x40), sig.length)
+            mstore(0xa0, 0x20)
+            mstore(0xc0, sig.length)
 
             // Store in memory, BASE(signature), EXPONENT, MODULUS(public key).
             calldatacopy(0xe0, sig.offset, sig.length)
@@ -129,21 +129,17 @@ contract Rsa {
             /**
              * @dev Calculate where in memory to copy modulus to (modPos). This must
              *      be dynamically determined as various size of signature may be used.
-             */
-            let modPos := add(0xe0, add(sig.length, 0x20))
 
-            /**
              * @dev 0x33 is a precalulated value that is the offset of where the
              *      signature begins in the metamorphic bytecode.
              */
-            extcodecopy(_metamorphicContractAddress, modPos, 0x33, sig.length)
+            extcodecopy(_metamorphicContractAddress, add(0xe0, add(sig.length, 0x20)), 0x33, sig.length)
 
             /**
              * @dev callDataSize must be dynamically calculated. It follows the
              *      previously mentioned memory layout including the length and
              *      value of the sig, exponent and modulus.
              */
-            let callDataSize := add(0x80, mul(sig.length, 2))
 
             /**
              * @dev Call 0x05 precompile (modular exponentation) w/ the following
@@ -158,41 +154,44 @@ contract Rsa {
              *      size of return data
              */
             if iszero(
-                staticcall(gas(), 0x05, 0x80, callDataSize, 0x80, sig.length)
+                staticcall(gas(), 0x05, 0x80, add(0x80, add(sig.length, sig.length)), 0x80, sig.length)
             ) {
                 revert(0, 0)
             }
-
 
             /**
              * @dev Check all leading 32-byte chunk to ensure values are zeroed out.
              *      If a valid sig then only the last 20 bytes will contains non-zero bits.
              */
             let chunksToCheck := div(sig.length, 0x20)
-            for { let i := 1 } lt(i, chunksToCheck) { i := add(i, 1) }
+
+                if gt(or(mload(0x80), mload(0xa0)),0) {
+                    revert(0, 0)
+                }
+
+            for { let i := 3 } lt(i, chunksToCheck) { i := add(i, 1) }
             {
                 if  mload(add(0x60, mul(i, 0x20)))
                 {
                     revert(0, 0)
-                }   
+                }
             }
 
             /**
              * @dev Decoded signature will always be contained in last 32-bytes.
              *      If msg.sender == decoded signature then return true, else false.
              */
-            let decodedSig := mload(add(0x60, sig.length))
-            if eq(caller(), decodedSig) {
+
+            if eq(caller(), mload(add(0x60, sig.length))) {
                 // Return true
-                mstore(0x00, 0x01)
-                return(0x00, 0x20)
+                mstore(returndatasize(), 0x01)
+                return(returndatasize(), 0x20)
             }
             // Else Return false
-            mstore(0x00, 0x00)
-            return(0x00, 0x20)
+            mstore(returndatasize(), 0x00)
+            return(returndatasize(), 0x20)
         }
     }
-
 
     modifier onlyOwner() {
         require(owner == msg.sender);
