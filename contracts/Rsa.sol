@@ -103,7 +103,8 @@ contract Rsa {
      *
      *      https://github.com/ethereum/EIPs/blob/master/EIPS/eip-198.md
      */
-    function verifySignature(bytes calldata sig) external view returns (bool) {
+
+   function verifySignature(bytes calldata sig) external view returns (bool) {
         require(sig.length == modLength);
 
         // Load immutable variable onto the stack.
@@ -191,6 +192,7 @@ contract Rsa {
             return(0x00, 0x20)
         }
     }
+
 
     modifier onlyOwner() {
         require(owner == msg.sender);
