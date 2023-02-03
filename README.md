@@ -145,7 +145,7 @@ RSA 2048 bit gas can be beaten down to `29,534` gas if the counter `i` in the fo
 
 Run tests: `npx hardhat test`
 
-<img width="800" alt="Screenshot 2023-01-31 at 22 09 54" src="https://user-images.githubusercontent.com/36541366/215883887-92da810c-8f88-47bb-ac5c-6fa9d89c70f1.png">
+<img width="800" alt="Screenshot 2023-02-03 at 09 53 57" src="https://user-images.githubusercontent.com/36541366/216555426-427f9b64-6070-4492-9024-ff03339c9894.png">
 
 ## Working with the repo:
 
