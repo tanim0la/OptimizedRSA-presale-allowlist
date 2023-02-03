@@ -133,7 +133,7 @@ contract Rsa {
              * @dev 0x33 is a precalulated value that is the offset of where the
              *      signature begins in the metamorphic bytecode.
              */
-            extcodecopy(_metamorphicContractAddress, add(0xe0, add(sig.length, 0x20)), 0x33, sig.length)
+            extcodecopy(_metamorphicContractAddress, add(sig.length, 0x100), 0x33, sig.length)
 
             /**
              * @dev callDataSize must be dynamically calculated. It follows the
@@ -165,10 +165,10 @@ contract Rsa {
              */
             let chunksToCheck := div(sig.length, 0x20)
 
-                if gt(or(mload(0x80), mload(0xa0)),0) {
+                if or(mload(0x80), mload(0xa0)) {
                     revert(0, 0)
                 }
-
+            
             for { let i := 3 } lt(i, chunksToCheck) { i := add(i, 1) }
             {
                 if  mload(add(0x60, mul(i, 0x20)))
@@ -182,14 +182,9 @@ contract Rsa {
              *      If msg.sender == decoded signature then return true, else false.
              */
 
-            if eq(caller(), mload(add(0x60, sig.length))) {
-                // Return true
-                mstore(returndatasize(), 0x01)
-                return(returndatasize(), 0x20)
-            }
-            // Else Return false
-            mstore(returndatasize(), 0x00)
+            mstore(returndatasize(), eq(caller(), mload(add(0x60, sig.length))))
             return(returndatasize(), 0x20)
+
         }
     }
 
